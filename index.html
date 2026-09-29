@@ -535,33 +535,67 @@ function captureLocation() {
     return;
   }
 
-  $('locationStatus').textContent = 'Requesting location…';
-  $('locationDetails').textContent = '';
+  $('locationStatus').textContent = 'Finding precise location…';
+  $('locationDetails').textContent = 'Waiting for the phone to refine the GPS fix';
 
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      draft.location = {
-        latitude: Number(pos.coords.latitude.toFixed(6)),
-        longitude: Number(pos.coords.longitude.toFixed(6)),
-        accuracyMeters: Math.round(pos.coords.accuracy),
-        capturedAt: new Date(pos.timestamp).toISOString()
-      };
+  let best = null;
+  let watchId = null;
+  let finished = false;
+
+  const applyPosition = (pos) => {
+    const candidate = {
+      latitude: Number(pos.coords.latitude.toFixed(6)),
+      longitude: Number(pos.coords.longitude.toFixed(6)),
+      accuracyMeters: Math.round(pos.coords.accuracy),
+      capturedAt: new Date(pos.timestamp).toISOString()
+    };
+
+    if (!best || candidate.accuracyMeters < best.accuracyMeters) {
+      best = candidate;
+      draft.location = best;
       draft.locationError = null;
-      $('locationStatus').textContent = `${draft.location.latitude}, ${draft.location.longitude}`;
-      $('locationDetails').textContent = `Accuracy about ±${draft.location.accuracyMeters} m`;
-    },
-    (err) => {
+      $('locationStatus').textContent = `${best.latitude}, ${best.longitude}`;
+      $('locationDetails').textContent = `Accuracy about ±${best.accuracyMeters} m — refining…`;
+    }
+
+    if (best.accuracyMeters <= 50) finish();
+  };
+
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+
+    if (best) {
+      draft.location = best;
+      draft.locationError = null;
+      $('locationStatus').textContent = `${best.latitude}, ${best.longitude}`;
+      $('locationDetails').textContent = `Accuracy about ±${best.accuracyMeters} m`;
+    } else {
       draft.location = null;
-      draft.locationError = `${err.message || 'Location permission denied or unavailable.'}`;
+      draft.locationError = 'No location fix received.';
       $('locationStatus').textContent = 'Location not captured';
       $('locationDetails').textContent = draft.locationError;
+    }
+  };
+
+  watchId = navigator.geolocation.watchPosition(
+    applyPosition,
+    (err) => {
+      if (!best) {
+        draft.locationError = err.message || 'Location permission denied or unavailable.';
+        $('locationStatus').textContent = 'Location not captured';
+        $('locationDetails').textContent = draft.locationError;
+      }
     },
     {
       enableHighAccuracy: true,
-      timeout: 12000,
+      timeout: 20000,
       maximumAge: 0
     }
   );
+
+  setTimeout(finish, 25000);
 }
 
 function selectedActivity() {
