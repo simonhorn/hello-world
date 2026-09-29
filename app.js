@@ -141,20 +141,28 @@ function renderChoices() {
 function markEventNow() {
   if (!draft) newDraft();
   draft.capturedAt = new Date().toISOString();
+  draft.location = null;
+  draft.locationError = null;
   $('capturedLocal').textContent = formatLocal(draft.capturedAt);
   showToast('Event time captured');
+  captureLocation();
+  setTimeout(function() {
+    const firstStep = $('step-bodyguardian');
+    if (firstStep) firstStep.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 120);
 }
 
 function newDraft() {
   draft = {
-    capturedAt: new Date().toISOString(),
+    capturedAt: null,
     location: null,
     locationError: null
   };
-  $('capturedLocal').textContent = formatLocal(draft.capturedAt);
+  $('capturedLocal').textContent = 'Tap RECORD EVENT NOW';
+  $('locationStatus').textContent = 'Not requested yet';
+  $('locationDetails').textContent = 'Location is checked only after you tap RECORD EVENT NOW.';
   $('placeName').value = '';
   $('placeHint').textContent = 'GPS is used only to recognize a useful place name.';
-  captureLocation();
 }
 
 function resetForm() {
@@ -316,8 +324,9 @@ function selectedSymptoms() {
 
 function validateEvent() {
   const issues = [];
-  if (!selectedActivity()) issues.push('Select one activity.');
+  if (!draft || !draft.capturedAt) issues.push('Tap RECORD EVENT NOW first.');
   if (!selectedSymptoms().length) issues.push('Select at least one symptom.');
+  if (!selectedActivity()) issues.push('Select one activity.');
   return issues;
 }
 
