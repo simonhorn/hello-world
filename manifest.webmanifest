@@ -1,0 +1,19 @@
+{
+  "name": "Heart Monitor Logger",
+  "short_name": "Heart Monitor",
+  "description": "Private BodyGuardian symptom and activity logger",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f5f7",
+  "theme_color": "#8a1538",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./heart-monitor-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
