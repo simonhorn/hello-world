@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '0.2.5';
+const APP_VERSION = '0.2.6';
 const STORAGE_KEY = 'heartMonitor.events.v1';
 const PLACES_KEY = 'heartMonitor.places.v1';
 const DELETED_KEY = 'heartMonitor.deleted.v1';
@@ -125,6 +125,7 @@ function renderChoices() {
 
   document.querySelectorAll('input[name="symptom"]').forEach(function(input) {
     input.addEventListener('change', function() {
+      $('step-symptoms').classList.remove('needs-attention');
       if (input.value === 'None / accidental push' && input.checked) {
         document.querySelectorAll('input[name="symptom"]').forEach(function(other) {
           if (other !== input) other.checked = false;
@@ -134,6 +135,12 @@ function renderChoices() {
           if (other.value === 'None / accidental push') other.checked = false;
         });
       }
+    });
+  });
+
+  document.querySelectorAll('input[name="activity"]').forEach(function(input) {
+    input.addEventListener('change', function() {
+      $('step-activity').classList.remove('needs-attention');
     });
   });
 }
@@ -328,20 +335,37 @@ function selectedSymptoms() {
   return Array.from(document.querySelectorAll('input[name="symptom"]:checked')).map(function(x) { return x.value; });
 }
 
+function clearValidationAttention() {
+  document.querySelectorAll('.needs-attention').forEach(function(el) {
+    el.classList.remove('needs-attention');
+  });
+}
+
+function scrollToValidationTarget(id) {
+  const target = $(id);
+  if (!target) return;
+  target.classList.add('needs-attention');
+  const header = document.querySelector('.app-header');
+  const headerHeight = header ? header.getBoundingClientRect().height : 0;
+  const y = target.getBoundingClientRect().top + window.scrollY - headerHeight - 8;
+  window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+}
+
 function validateEvent() {
   const issues = [];
-  if (!draft || !draft.capturedAt) issues.push('Tap RECORD EVENT NOW first.');
-  if (!selectedSymptoms().length) issues.push('Select at least one symptom.');
-  if (!selectedActivity()) issues.push('Select one activity.');
+  if (!draft || !draft.capturedAt) issues.push({ message: 'Tap RECORD EVENT NOW first.', target: 'captureNowBtn' });
+  if (!selectedSymptoms().length) issues.push({ message: 'Select at least one symptom.', target: 'step-symptoms' });
+  if (!selectedActivity()) issues.push({ message: 'Select one activity.', target: 'step-activity' });
   return issues;
 }
 
 function saveEvent() {
+  clearValidationAttention();
   const issues = validateEvent();
   if (issues.length) {
-    $('validationMsg').innerHTML = issues.map(function(x) { return '• ' + escapeHtml(x); }).join('<br>');
+    $('validationMsg').innerHTML = issues.map(function(x) { return '• ' + escapeHtml(x.message); }).join('<br>');
     $('validationMsg').classList.remove('hidden');
-    $('validationMsg').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    scrollToValidationTarget(issues[0].target);
     return;
   }
 
