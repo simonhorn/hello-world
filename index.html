@@ -347,29 +347,14 @@ button:disabled {
 
       <div class="stamp-card">
         <div>
-          <span class="label">Captured</span>
-          <strong id="capturedLocal">—</strong>
+          <span class="label">Event time</span>
+          <strong id="capturedLocal">Tap RECORD EVENT NOW</strong>
         </div>
         <button id="recaptureBtn" class="secondary compact" type="button">Reset time to now</button>
       </div>
 
-      <div class="location-card">
-        <div>
-          <span class="label">Location</span>
-          <strong id="locationStatus">Requesting location…</strong>
-          <small id="locationDetails"></small>
-        </div>
-        <button id="retryLocationBtn" class="secondary compact" type="button">Retry</button>
-      </div>
-
-      <fieldset>
-        <legend>Place <span class="hint">(patient-defined context)</span></legend>
-        <input id="placeName" class="text-input" type="text" maxlength="80" placeholder="Home, Gym, Church, Movie Theatre..." autocomplete="off" />
-        <small id="placeHint" class="status">GPS is used only to recognize a useful place name.</small>
-      </fieldset>
-
-      <fieldset>
-        <legend>BodyGuardian button</legend>
+      <fieldset id="step-bodyguardian">
+        <legend>1. BodyGuardian button</legend>
         <label class="check-row">
           <input type="checkbox" id="monitorPressed" />
           <span>I pressed and released the center button once</span>
@@ -377,17 +362,12 @@ button:disabled {
       </fieldset>
 
       <fieldset>
-        <legend>Activity <span class="hint">(select one)</span></legend>
-        <div id="activities" class="choice-grid"></div>
-      </fieldset>
-
-      <fieldset>
-        <legend>Symptoms <span class="hint">(select one or more)</span></legend>
+        <legend>2. Symptoms <span class="hint">(select one or more)</span></legend>
         <div id="symptoms" class="choice-grid"></div>
       </fieldset>
 
       <fieldset>
-        <legend>Duration</legend>
+        <legend>3. Duration</legend>
         <select id="duration" class="text-input">
           <option value="">Not recorded</option>
           <option>Still happening</option>
@@ -400,7 +380,26 @@ button:disabled {
       </fieldset>
 
       <fieldset>
-        <legend>Symptom timing relative to BodyGuardian button</legend>
+        <legend>4. Activity <span class="hint">(select one)</span></legend>
+        <div id="activities" class="choice-grid"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>5. Place / context</legend>
+        <div class="location-card">
+          <div>
+            <span class="label">Place recognition</span>
+            <strong id="locationStatus">Not requested yet</strong>
+            <small id="locationDetails">Location is checked only after you tap RECORD EVENT NOW.</small>
+          </div>
+          <button id="retryLocationBtn" class="secondary compact" type="button">Retry</button>
+        </div>
+        <input id="placeName" class="text-input" type="text" maxlength="80" placeholder="Home, Gym, Church, Movie Theatre..." autocomplete="off" />
+        <small id="placeHint" class="status">GPS is used only to recognize a useful place name.</small>
+      </fieldset>
+
+      <fieldset>
+        <legend>6. Symptom timing relative to BodyGuardian button</legend>
         <select id="symptomTiming" class="text-input">
           <option value="">Not recorded</option>
           <option>Started before button press</option>
@@ -411,7 +410,7 @@ button:disabled {
       </fieldset>
 
       <fieldset>
-        <legend>Other / details</legend>
+        <legend>7. Other / details</legend>
         <p class="hint">Type details or dictate them. Dictation is converted to text; raw audio is not stored.</p>
         <textarea id="notes" rows="5" placeholder="Example: fluttering started while sitting after breakfast; lasted about 30 seconds..."></textarea>
         <div class="button-row">
