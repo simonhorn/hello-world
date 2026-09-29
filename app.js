@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '0.2.8';
+const APP_VERSION = '0.2.9';
 const STORAGE_KEY = 'heartMonitor.events.v1';
 const PLACES_KEY = 'heartMonitor.places.v1';
 const DELETED_KEY = 'heartMonitor.deleted.v1';
@@ -428,7 +428,13 @@ function saveEvent() {
   const wasEdit = !!existing;
   resetForm();
   renderHistory();
-  showSavedPrompt(wasEdit);
+
+  // Make it visually unmistakable that the saved event is complete
+  // and the underlying form is ready for a brand-new event.
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(function() {
+    showSavedPrompt(wasEdit);
+  }, 180);
 }
 
 function showSavedPrompt(wasEdit) {
@@ -926,9 +932,11 @@ function setupActions() {
   $('savedSummaryBtn').addEventListener('click', openSavedSummary);
   $('savedDoneBtn').addEventListener('click', function() {
     if ($('savedDialog').open) $('savedDialog').close();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
   $('closeSummaryBtn').addEventListener('click', function() {
     if ($('summaryDialog').open) $('summaryDialog').close();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
   $('editSavedEventBtn').addEventListener('click', function() {
     const id = lastSavedEventId;
