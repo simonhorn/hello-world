@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '0.2.0';
+const APP_VERSION = '0.2.1';
 const STORAGE_KEY = 'heartMonitor.events.v1';
 const PLACES_KEY = 'heartMonitor.places.v1';
 const DELETED_KEY = 'heartMonitor.deleted.v1';
@@ -800,8 +800,17 @@ function setupActions() {
 
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-      navigator.serviceWorker.register('./service-worker.js').catch(function() {});
+    let reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+      if (reloading) return;
+      reloading = true;
+      window.location.reload();
+    });
+    window.addEventListener('load', async function() {
+      try {
+        const reg = await navigator.serviceWorker.register('./service-worker.js');
+        await reg.update();
+      } catch {}
     });
   }
 }
