@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '0.2.9';
+const APP_VERSION = '0.2.10';
 const STORAGE_KEY = 'heartMonitor.events.v1';
 const PLACES_KEY = 'heartMonitor.places.v1';
 const DELETED_KEY = 'heartMonitor.deleted.v1';
@@ -704,7 +704,7 @@ async function shareText(textValue, title) {
   try {
     if (navigator.share) {
       await navigator.share({ title: title, text: textValue });
-      setShareStatus('Share sheet opened.');
+      setShareStatus('Android share sheet opened. Choose the destination app.');
     } else {
       await navigator.clipboard.writeText(textValue);
       setShareStatus('Sharing is not available here, so the text was copied to the clipboard.');
@@ -978,7 +978,7 @@ function setupActions() {
   $('copyAllBtn').addEventListener('click', async function() {
     try {
       await navigator.clipboard.writeText(allEventsToText());
-      setShareStatus('All events copied to the clipboard.');
+      setShareStatus('All events copied. Open the Heart Monitor Project chat, paste, and send.');
       showToast('Copied to clipboard');
     } catch {
       setShareStatus('Clipboard access was blocked. Use Share or Export.');
