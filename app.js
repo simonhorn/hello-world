@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '0.2.1';
+const APP_VERSION = '0.2.2';
 const STORAGE_KEY = 'heartMonitor.events.v1';
 const PLACES_KEY = 'heartMonitor.places.v1';
 const DELETED_KEY = 'heartMonitor.deleted.v1';
@@ -146,10 +146,6 @@ function markEventNow() {
   $('capturedLocal').textContent = formatLocal(draft.capturedAt);
   showToast('Event time captured');
   captureLocation();
-  setTimeout(function() {
-    const firstStep = $('step-bodyguardian');
-    if (firstStep) firstStep.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 120);
 }
 
 function newDraft() {
