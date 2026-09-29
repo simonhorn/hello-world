@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '0.2.4';
+const APP_VERSION = '0.2.5';
 const STORAGE_KEY = 'heartMonitor.events.v1';
 const PLACES_KEY = 'heartMonitor.places.v1';
 const DELETED_KEY = 'heartMonitor.deleted.v1';
@@ -147,14 +147,15 @@ function markEventNow() {
   showToast('Event time captured');
   captureLocation();
 
-  // Keep useful context above Step 1 instead of pinning the question to the top edge.
+  // Put Step 1 at the top of the usable screen, just below the sticky header.
   setTimeout(function() {
-    const stamp = $('capturedLocal');
-    if (stamp) {
-      const y = stamp.getBoundingClientRect().top + window.scrollY - 110;
-      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
-    }
-  }, 120);
+    const firstStep = $('step-bodyguardian');
+    if (!firstStep) return;
+    const header = document.querySelector('.app-header');
+    const headerHeight = header ? header.getBoundingClientRect().height : 0;
+    const y = firstStep.getBoundingClientRect().top + window.scrollY - headerHeight - 6;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+  }, 180);
 }
 
 function newDraft() {
