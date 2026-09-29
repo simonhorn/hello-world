@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '0.2.3';
+const APP_VERSION = '0.2.4';
 const STORAGE_KEY = 'heartMonitor.events.v1';
 const PLACES_KEY = 'heartMonitor.places.v1';
 const DELETED_KEY = 'heartMonitor.deleted.v1';
@@ -146,6 +146,15 @@ function markEventNow() {
   $('capturedLocal').textContent = formatLocal(draft.capturedAt);
   showToast('Event time captured');
   captureLocation();
+
+  // Keep useful context above Step 1 instead of pinning the question to the top edge.
+  setTimeout(function() {
+    const stamp = $('capturedLocal');
+    if (stamp) {
+      const y = stamp.getBoundingClientRect().top + window.scrollY - 110;
+      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+    }
+  }, 120);
 }
 
 function newDraft() {
