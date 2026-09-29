@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '0.2.2';
+const APP_VERSION = '0.2.3';
 const STORAGE_KEY = 'heartMonitor.events.v1';
 const PLACES_KEY = 'heartMonitor.places.v1';
 const DELETED_KEY = 'heartMonitor.deleted.v1';
@@ -341,6 +341,7 @@ function saveEvent() {
   const event = {
     id: uid(),
     appVersion: APP_VERSION,
+    isTest: $('testMode').checked,
     capturedAt: draft.capturedAt,
     savedAt: new Date().toISOString(),
     place: placeName || null,
@@ -388,8 +389,11 @@ function renderHistory() {
         '><span>Select this record for deletion</span></label>'
       : '';
 
+    const testBadge = event.isTest ? '<div class="test-badge">TEST EVENT — simulated</div>' : '';
+
     return '<article class="event-card">' +
       selector +
+      testBadge +
       '<div class="event-title"><h3>' + escapeHtml(formatLocal(event.capturedAt)) + '</h3></div>' +
       '<dl>' +
       '<dt>Place</dt><dd>' + escapeHtml(eventPlaceText(event)) + '</dd>' +
@@ -497,6 +501,7 @@ function eventToText(event) {
   const place = event.place || (event.location ? 'Unnamed place (exact GPS kept only on device)' : 'Not captured');
   return [
     'HEART MONITOR / BODYGUARDIAN EVENT',
+    'Record type: ' + (event.isTest ? 'TEST / SIMULATED — NOT CLINICAL' : 'Clinical event'),
     'Captured: ' + formatLocal(event.capturedAt),
     'ISO timestamp: ' + event.capturedAt,
     'Place: ' + place,
@@ -555,7 +560,7 @@ function csvEscape(value) {
 }
 
 function exportCsv() {
-  const events = getEvents();
+  const events = getEvents().filter(function(e) { return !e.isTest; });
   const headers = [
     'captured_at_iso',
     'captured_at_local',
