@@ -343,6 +343,32 @@ button:disabled {
   box-shadow: 0 0 0 3px rgba(180,35,24,.12);
 }
 
+.app-dialog {
+  width: min(92vw, 560px);
+  border: 0;
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 18px 60px rgba(0,0,0,.28);
+  color: var(--text);
+  background: var(--card);
+}
+.app-dialog::backdrop {
+  background: rgba(0,0,0,.48);
+}
+.app-dialog h2 { margin-top: 0; }
+.dialog-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+.summary-list {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 8px 12px;
+}
+.summary-list dt { font-weight: 800; }
+.summary-list dd { margin: 0; overflow-wrap: anywhere; }
+
 </style>
   <title>Heart Monitor Logger</title>
 </head>
@@ -350,7 +376,7 @@ button:disabled {
   <header class="app-header">
     <div>
       <h1>Heart Monitor</h1>
-      <p>BodyGuardian event logger · v0.2.6</p>
+      <p>BodyGuardian event logger · v0.2.7</p>
     </div>
     <button id="installBtn" class="secondary hidden" type="button">Install app</button>
   </header>
@@ -519,7 +545,25 @@ button:disabled {
 
   <div id="toast" class="toast hidden" role="status"></div>
 
-  <script src="./app.js?v=0.2.6"></script>
+  <dialog id="savedDialog" class="app-dialog">
+    <h2 id="savedDialogTitle">Event recorded</h2>
+    <p id="savedDialogMessage">Event recorded. Would you like to see the summary?</p>
+    <div class="dialog-actions">
+      <button id="savedSummaryBtn" class="primary" type="button">See summary</button>
+      <button id="savedDoneBtn" class="secondary" type="button">No — ready for next event</button>
+    </div>
+  </dialog>
+
+  <dialog id="summaryDialog" class="app-dialog">
+    <h2>Event summary</h2>
+    <div id="summaryContent"></div>
+    <div class="dialog-actions">
+      <button id="editSavedEventBtn" class="primary" type="button">Edit this event</button>
+      <button id="closeSummaryBtn" class="secondary" type="button">Close summary</button>
+    </div>
+  </dialog>
+
+  <script src="./app.js?v=0.2.7"></script>
 
 </body>
 </html>
