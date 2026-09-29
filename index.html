@@ -376,7 +376,7 @@ button:disabled {
   <header class="app-header">
     <div>
       <h1>Heart Monitor</h1>
-      <p>BodyGuardian event logger · v0.2.7</p>
+      <p>BodyGuardian event logger · v0.2.8</p>
     </div>
     <button id="installBtn" class="secondary hidden" type="button">Install app</button>
   </header>
@@ -563,7 +563,16 @@ button:disabled {
     </div>
   </dialog>
 
-  <script src="./app.js?v=0.2.7"></script>
+  <dialog id="incompleteDialog" class="app-dialog">
+    <h2>Event incomplete</h2>
+    <p id="incompleteMessage">One or more entries are missing. Review all steps before saving.</p>
+    <div class="dialog-actions">
+      <button id="reviewMissingBtn" class="primary" type="button">Review missing entry</button>
+      <button id="closeIncompleteBtn" class="secondary" type="button">Close</button>
+    </div>
+  </dialog>
+
+  <script src="./app.js?v=0.2.8"></script>
 
 </body>
 </html>
