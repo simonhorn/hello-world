@@ -376,7 +376,7 @@ button:disabled {
   <header class="app-header">
     <div>
       <h1>Heart Monitor</h1>
-      <p>BodyGuardian event logger · v0.2.9</p>
+      <p>BodyGuardian event logger · v0.2.10</p>
     </div>
     <button id="installBtn" class="secondary hidden" type="button">Install app</button>
   </header>
@@ -516,12 +516,15 @@ button:disabled {
       </p>
 
       <div class="share-card">
-        <h3>Send to Heart Monitor Project</h3>
+        <h3>ChatGPT / Heart Monitor Project</h3>
         <button id="copyLatestBtn" class="primary" type="button">Copy latest event for ChatGPT</button>
-        <button id="shareLatestBtn" class="secondary" type="button">Share latest event</button>
-        <button id="shareAllBtn" class="secondary" type="button">Share all events</button>
-        <button id="copyAllBtn" class="secondary" type="button">Copy all events as text</button>
-        <p class="hint">Best route for the Heart Monitor Project: copy the latest event, open this Heart Monitor chat, paste, and send.</p>
+        <button id="copyAllBtn" class="primary" type="button">Copy all events for ChatGPT</button>
+        <p class="hint">Reliable route: copy the event(s), open this exact Heart Monitor Project chat, paste, and send.</p>
+
+        <h3 style="margin-top:18px;">Share through another app</h3>
+        <button id="shareLatestBtn" class="secondary" type="button">Share latest event via another app</button>
+        <button id="shareAllBtn" class="secondary" type="button">Share all events via another app</button>
+        <p class="hint">Android's share sheet may open a general ChatGPT chat instead of this Project, so use the Copy buttons above when sending records here.</p>
       </div>
 
       <div class="share-card">
@@ -572,7 +575,7 @@ button:disabled {
     </div>
   </dialog>
 
-  <script src="./app.js?v=0.2.9"></script>
+  <script src="./app.js?v=0.2.10"></script>
 
 </body>
 </html>
