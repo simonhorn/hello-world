@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '0.2.6';
+const APP_VERSION = '0.2.7';
 const STORAGE_KEY = 'heartMonitor.events.v1';
 const PLACES_KEY = 'heartMonitor.places.v1';
 const DELETED_KEY = 'heartMonitor.deleted.v1';
@@ -40,6 +40,8 @@ let recognition = null;
 let deferredInstallPrompt = null;
 let manageMode = false;
 let selectedDeleteIds = new Set();
+let editingEventId = null;
+let lastSavedEventId = null;
 
 const $ = (id) => document.getElementById(id);
 
@@ -179,6 +181,7 @@ function newDraft() {
 }
 
 function resetForm() {
+  editingEventId = null;
   document.querySelectorAll('input[name="activity"]').forEach(function(x) { x.checked = false; });
   document.querySelectorAll('input[name="symptom"]').forEach(function(x) { x.checked = false; });
   $('monitorPressed').checked = false;
@@ -187,6 +190,8 @@ function resetForm() {
   $('symptomTiming').value = '';
   $('placeName').value = '';
   $('validationMsg').classList.add('hidden');
+  $('saveBtn').textContent = 'Save event';
+  $('cancelBtn').textContent = 'Clear this event';
   newDraft();
 }
 
@@ -372,12 +377,19 @@ function saveEvent() {
   const placeName = $('placeName').value.trim();
   if (placeName && draft.location) rememberPlace(placeName, draft.location);
 
+  const events = getEvents();
+  const now = new Date().toISOString();
+  const existingIndex = editingEventId ? events.findIndex(function(e) { return e.id === editingEventId; }) : -1;
+  const existing = existingIndex >= 0 ? events[existingIndex] : null;
+
   const event = {
-    id: uid(),
+    id: existing ? existing.id : uid(),
     appVersion: APP_VERSION,
     isTest: $('testMode').checked,
     capturedAt: draft.capturedAt,
-    savedAt: new Date().toISOString(),
+    savedAt: existing ? existing.savedAt : now,
+    updatedAt: existing ? now : null,
+    revisionCount: existing ? (existing.revisionCount || 0) + 1 : 0,
     place: placeName || null,
     location: placeName ? null : draft.location,
     locationError: draft.locationError,
@@ -389,14 +401,107 @@ function saveEvent() {
     notes: $('notes').value.trim()
   };
 
-  const events = getEvents();
-  events.unshift(event);
+  if (existing) {
+    events[existingIndex] = event;
+  } else {
+    events.unshift(event);
+  }
   setEvents(events);
 
-  showToast('Event saved');
-  renderHistory();
+  lastSavedEventId = event.id;
+  const wasEdit = !!existing;
   resetForm();
+  renderHistory();
+  showSavedPrompt(wasEdit);
 }
+
+function showSavedPrompt(wasEdit) {
+  $('savedDialogTitle').textContent = wasEdit ? 'Changes saved' : 'Event recorded';
+  $('savedDialogMessage').textContent = wasEdit
+    ? 'Your corrections were saved to the same event. Would you like to see the updated summary?'
+    : 'Event recorded. Would you like to see the summary?';
+  if ($('savedDialog').open) $('savedDialog').close();
+  $('savedDialog').showModal();
+}
+
+function summaryHtml(event) {
+  return '<dl class="summary-list">' +
+    '<dt>Record</dt><dd>' + (event.isTest ? 'TEST / simulated' : 'Clinical event') + '</dd>' +
+    '<dt>Time</dt><dd>' + escapeHtml(formatLocal(event.capturedAt)) + '</dd>' +
+    '<dt>BG button</dt><dd>' + (event.bodyGuardianButtonPressed ? 'Pressed' : 'Not marked as pressed') + '</dd>' +
+    '<dt>Symptoms</dt><dd>' + escapeHtml((event.symptoms || []).join(', ')) + '</dd>' +
+    '<dt>Duration</dt><dd>' + escapeHtml(event.duration || 'Not recorded') + '</dd>' +
+    '<dt>Activity</dt><dd>' + escapeHtml(event.activity || 'Not recorded') + '</dd>' +
+    '<dt>Place</dt><dd>' + escapeHtml(eventPlaceText(event)) + '</dd>' +
+    '<dt>Timing</dt><dd>' + escapeHtml(event.symptomTiming || 'Not recorded') + '</dd>' +
+    '<dt>Details</dt><dd>' + escapeHtml(event.notes || 'None') + '</dd>' +
+    (event.revisionCount ? '<dt>Edited</dt><dd>' + event.revisionCount + ' time' + (event.revisionCount === 1 ? '' : 's') + '</dd>' : '') +
+    '</dl>';
+}
+
+function openSavedSummary() {
+  const event = getEvents().find(function(e) { return e.id === lastSavedEventId; });
+  if (!event) return;
+  if ($('savedDialog').open) $('savedDialog').close();
+  $('summaryContent').innerHTML = summaryHtml(event);
+  $('summaryDialog').showModal();
+}
+
+function loadEventForEdit(id) {
+  const event = getEvents().find(function(e) { return e.id === id; });
+  if (!event) return;
+
+  editingEventId = event.id;
+  draft = {
+    capturedAt: event.capturedAt,
+    location: event.location || null,
+    locationError: event.locationError || null
+  };
+
+  $('capturedLocal').textContent = formatLocal(event.capturedAt);
+  $('testMode').checked = !!event.isTest;
+  $('monitorPressed').checked = !!event.bodyGuardianButtonPressed;
+  $('duration').value = event.duration || '';
+  $('symptomTiming').value = event.symptomTiming || '';
+  $('placeName').value = event.place || '';
+  $('notes').value = event.notes || '';
+
+  document.querySelectorAll('input[name="activity"]').forEach(function(x) {
+    x.checked = x.value === event.activity;
+  });
+  document.querySelectorAll('input[name="symptom"]').forEach(function(x) {
+    x.checked = (event.symptoms || []).includes(x.value);
+  });
+
+  if (event.place) {
+    $('locationStatus').textContent = 'Saved place';
+    $('locationDetails').textContent = 'Editing an existing record; exact GPS is not needed.';
+    $('placeHint').textContent = 'Saved place: ' + event.place;
+  } else if (event.location) {
+    $('locationStatus').textContent = 'Unnamed saved location';
+    $('locationDetails').textContent = 'You may add a useful place name now.';
+    $('placeHint').textContent = 'Name this place if useful.';
+  } else {
+    $('locationStatus').textContent = 'No location stored';
+    $('locationDetails').textContent = 'You may enter a place name manually.';
+    $('placeHint').textContent = 'Place is optional context.';
+  }
+
+  $('saveBtn').textContent = 'Save changes';
+  $('cancelBtn').textContent = 'Cancel editing';
+  $('validationMsg').classList.add('hidden');
+  activateTab('new');
+
+  setTimeout(function() {
+    const firstStep = $('step-bodyguardian');
+    if (!firstStep) return;
+    const header = document.querySelector('.app-header');
+    const headerHeight = header ? header.getBoundingClientRect().height : 0;
+    const y = firstStep.getBoundingClientRect().top + window.scrollY - headerHeight - 6;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+  }, 120);
+}
+
 
 function eventPlaceText(event) {
   if (event.place) return event.place;
@@ -439,10 +544,17 @@ function renderHistory() {
       '<dt>Details</dt><dd>' + escapeHtml(event.notes || '—') + '</dd>' +
       '</dl>' +
       '<div class="event-actions">' +
+      '<button class="secondary" type="button" data-edit="' + escapeHtml(event.id) + '">Edit</button>' +
       '<button class="secondary" type="button" data-share="' + escapeHtml(event.id) + '">Share</button>' +
       '</div>' +
       '</article>';
   }).join('');
+
+  document.querySelectorAll('[data-edit]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      loadEventForEdit(btn.dataset.edit);
+    });
+  });
 
   document.querySelectorAll('[data-share]').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -772,7 +884,11 @@ function setupActions() {
   $('saveBtn').addEventListener('click', saveEvent);
 
   $('cancelBtn').addEventListener('click', function() {
-    if (confirm('Clear this unsaved event?')) resetForm();
+    if (editingEventId) {
+      if (confirm('Cancel editing? Your saved event will remain unchanged.')) resetForm();
+    } else {
+      if (confirm('Clear this unsaved event?')) resetForm();
+    }
   });
 
   $('newEventBtn').addEventListener('click', function() {
@@ -781,6 +897,19 @@ function setupActions() {
   });
 
   $('clearNotesBtn').addEventListener('click', function() { $('notes').value = ''; });
+
+  $('savedSummaryBtn').addEventListener('click', openSavedSummary);
+  $('savedDoneBtn').addEventListener('click', function() {
+    if ($('savedDialog').open) $('savedDialog').close();
+  });
+  $('closeSummaryBtn').addEventListener('click', function() {
+    if ($('summaryDialog').open) $('summaryDialog').close();
+  });
+  $('editSavedEventBtn').addEventListener('click', function() {
+    const id = lastSavedEventId;
+    if ($('summaryDialog').open) $('summaryDialog').close();
+    if (id) loadEventForEdit(id);
+  });
 
   $('manageRecordsBtn').addEventListener('click', function() {
     if (!manageMode) enterManageMode();
