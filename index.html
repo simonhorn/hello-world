@@ -392,10 +392,12 @@ textarea {
       </p>
 
       <div class="share-card">
-        <h3>Share</h3>
-        <button id="shareLatestBtn" class="primary" type="button">Share latest event</button>
+        <h3>Send to Heart Monitor Project</h3>
+        <button id="copyLatestBtn" class="primary" type="button">Copy latest event for ChatGPT</button>
+        <button id="shareLatestBtn" class="secondary" type="button">Share latest event</button>
         <button id="shareAllBtn" class="secondary" type="button">Share all events</button>
         <button id="copyAllBtn" class="secondary" type="button">Copy all events as text</button>
+        <p class="hint">Best route for the Heart Monitor Project: copy the latest event, open this Heart Monitor chat, paste, and send.</p>
       </div>
 
       <div class="share-card">
@@ -931,6 +933,18 @@ function setupActions() {
     activateTab('new');
   });
   $('clearNotesBtn').addEventListener('click', () => $('notes').value = '');
+
+  $('copyLatestBtn').addEventListener('click', async () => {
+    const latest = getEvents()[0];
+    if (!latest) return setShareStatus('No saved events to copy.');
+    try {
+      await navigator.clipboard.writeText(eventToText(latest));
+      setShareStatus('Latest event copied. Open the Heart Monitor Project chat, paste, and send.');
+      showToast('Latest event copied');
+    } catch {
+      setShareStatus('Clipboard access was blocked. Use Share latest event instead.');
+    }
+  });
 
   $('shareLatestBtn').addEventListener('click', () => {
     const latest = getEvents()[0];
