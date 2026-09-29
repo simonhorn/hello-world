@@ -321,6 +321,23 @@ button:disabled {
   opacity: .48;
   cursor: not-allowed;
 }
+.test-mode-row {
+  margin: 0 0 12px;
+  border: 1px dashed #b54708;
+  background: #fff7ed;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+.test-badge {
+  display: inline-block;
+  margin: 0 0 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  font-size: .78rem;
+  font-weight: 800;
+}
 
 </style>
   <title>Heart Monitor Logger</title>
@@ -329,7 +346,7 @@ button:disabled {
   <header class="app-header">
     <div>
       <h1>Heart Monitor</h1>
-      <p>BodyGuardian event logger · v0.2.2</p>
+      <p>BodyGuardian event logger · v0.2.3</p>
     </div>
     <button id="installBtn" class="secondary hidden" type="button">Install app</button>
   </header>
@@ -344,6 +361,11 @@ button:disabled {
     <section id="tab-new" class="panel active">
       <button id="captureNowBtn" class="primary big capture-now" type="button">RECORD EVENT NOW</button>
       <p class="hint capture-hint">Tap this first when an event happens. The exact time is locked immediately; add the details afterward.</p>
+
+      <label class="check-row test-mode-row">
+        <input type="checkbox" id="testMode" />
+        <span><strong>TEST MODE</strong> — simulated event; not part of the clinical record</span>
+      </label>
 
       <div class="stamp-card">
         <div>
@@ -493,7 +515,7 @@ button:disabled {
 
   <div id="toast" class="toast hidden" role="status"></div>
 
-  <script src="./app.js?v=0.2.2"></script>
+  <script src="./app.js?v=0.2.3"></script>
 
 </body>
 </html>
