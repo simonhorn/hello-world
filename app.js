@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '0.2.7';
+const APP_VERSION = '0.2.8';
 const STORAGE_KEY = 'heartMonitor.events.v1';
 const PLACES_KEY = 'heartMonitor.places.v1';
 const DELETED_KEY = 'heartMonitor.deleted.v1';
@@ -368,9 +368,25 @@ function saveEvent() {
   clearValidationAttention();
   const issues = validateEvent();
   if (issues.length) {
-    $('validationMsg').innerHTML = issues.map(function(x) { return '• ' + escapeHtml(x.message); }).join('<br>');
+    const missingNames = issues.map(function(x) {
+      if (x.target === 'step-symptoms') return 'Symptoms';
+      if (x.target === 'step-activity') return 'Activity';
+      if (x.target === 'captureNowBtn') return 'Event time';
+      return 'Required entry';
+    });
+
+    $('validationMsg').innerHTML =
+      '<strong>This event is incomplete.</strong><br>' +
+      'Review the highlighted step before saving.<br>' +
+      'Missing: ' + escapeHtml(missingNames.join(', '));
+
     $('validationMsg').classList.remove('hidden');
-    scrollToValidationTarget(issues[0].target);
+    window._heartMonitorFirstMissingTarget = issues[0].target;
+    $('incompleteMessage').textContent =
+      'An entry is missing. Review all steps before saving. Missing: ' + missingNames.join(', ') + '.';
+
+    if ($('incompleteDialog').open) $('incompleteDialog').close();
+    $('incompleteDialog').showModal();
     return;
   }
 
@@ -418,8 +434,8 @@ function saveEvent() {
 function showSavedPrompt(wasEdit) {
   $('savedDialogTitle').textContent = wasEdit ? 'Changes saved' : 'Event recorded';
   $('savedDialogMessage').textContent = wasEdit
-    ? 'Your corrections were saved to the same event. Would you like to see the updated summary?'
-    : 'Event recorded. Would you like to see the summary?';
+    ? 'Your corrections were saved to the same event. Would you like to review the updated summary?'
+    : 'Event recorded successfully. Would you like to review the summary now?';
   if ($('savedDialog').open) $('savedDialog').close();
   $('savedDialog').showModal();
 }
@@ -897,6 +913,15 @@ function setupActions() {
   });
 
   $('clearNotesBtn').addEventListener('click', function() { $('notes').value = ''; });
+
+  $('reviewMissingBtn').addEventListener('click', function() {
+    if ($('incompleteDialog').open) $('incompleteDialog').close();
+    const target = window._heartMonitorFirstMissingTarget;
+    if (target) scrollToValidationTarget(target);
+  });
+  $('closeIncompleteBtn').addEventListener('click', function() {
+    if ($('incompleteDialog').open) $('incompleteDialog').close();
+  });
 
   $('savedSummaryBtn').addEventListener('click', openSavedSummary);
   $('savedDoneBtn').addEventListener('click', function() {
