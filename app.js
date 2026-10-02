@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '0.2.10';
+const APP_VERSION = '0.2.11';
 const STORAGE_KEY = 'heartMonitor.events.v1';
 const PLACES_KEY = 'heartMonitor.places.v1';
 const DELETED_KEY = 'heartMonitor.deleted.v1';
@@ -55,6 +55,24 @@ function formatLocal(iso) {
     dateStyle: 'medium',
     timeStyle: 'medium'
   }).format(new Date(iso));
+}
+
+function toLocalDateTimeValue(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = function(n) { return String(n).padStart(2, '0'); };
+  return d.getFullYear() + '-' +
+    pad(d.getMonth() + 1) + '-' +
+    pad(d.getDate()) + 'T' +
+    pad(d.getHours()) + ':' +
+    pad(d.getMinutes()) + ':' +
+    pad(d.getSeconds());
+}
+
+function localDateTimeValueToIso(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
 function escapeHtml(value) {
@@ -192,6 +210,9 @@ function resetForm() {
   $('validationMsg').classList.add('hidden');
   $('saveBtn').textContent = 'Save event';
   $('cancelBtn').textContent = 'Clear this event';
+  $('editTimePanel').classList.add('hidden');
+  $('eventDateTimeInput').value = '';
+  $('timeAdjustmentNote').textContent = '';
   newDraft();
 }
 
@@ -398,11 +419,28 @@ function saveEvent() {
   const existingIndex = editingEventId ? events.findIndex(function(e) { return e.id === editingEventId; }) : -1;
   const existing = existingIndex >= 0 ? events[existingIndex] : null;
 
+  let eventTime = draft.capturedAt;
+  let originalCapturedAt = existing ? (existing.originalCapturedAt || existing.capturedAt) : draft.capturedAt;
+  let timestampAdjusted = existing ? !!existing.timestampAdjusted : false;
+  let timestampAdjustedAt = existing ? (existing.timestampAdjustedAt || null) : null;
+
+  if (existing && !$('editTimePanel').classList.contains('hidden')) {
+    const editedIso = localDateTimeValueToIso($('eventDateTimeInput').value);
+    if (editedIso && editedIso !== existing.capturedAt) {
+      eventTime = editedIso;
+      timestampAdjusted = true;
+      timestampAdjustedAt = now;
+    }
+  }
+
   const event = {
     id: existing ? existing.id : uid(),
     appVersion: APP_VERSION,
     isTest: $('testMode').checked,
-    capturedAt: draft.capturedAt,
+    capturedAt: eventTime,
+    originalCapturedAt: originalCapturedAt,
+    timestampAdjusted: timestampAdjusted,
+    timestampAdjustedAt: timestampAdjustedAt,
     savedAt: existing ? existing.savedAt : now,
     updatedAt: existing ? now : null,
     revisionCount: existing ? (existing.revisionCount || 0) + 1 : 0,
@@ -422,6 +460,9 @@ function saveEvent() {
   } else {
     events.unshift(event);
   }
+  events.sort(function(a, b) {
+    return new Date(b.capturedAt) - new Date(a.capturedAt);
+  });
   setEvents(events);
 
   lastSavedEventId = event.id;
@@ -449,7 +490,11 @@ function showSavedPrompt(wasEdit) {
 function summaryHtml(event) {
   return '<dl class="summary-list">' +
     '<dt>Record</dt><dd>' + (event.isTest ? 'TEST / simulated' : 'Clinical event') + '</dd>' +
-    '<dt>Time</dt><dd>' + escapeHtml(formatLocal(event.capturedAt)) + '</dd>' +
+    '<dt>Time</dt><dd>' + escapeHtml(formatLocal(event.capturedAt)) +
+      (event.timestampAdjusted ? ' <strong>(adjusted after event)</strong>' : '') + '</dd>' +
+    (event.timestampAdjusted && event.originalCapturedAt
+      ? '<dt>Original app time</dt><dd>' + escapeHtml(formatLocal(event.originalCapturedAt)) + '</dd>'
+      : '') +
     '<dt>BG button</dt><dd>' + (event.bodyGuardianButtonPressed ? 'Pressed' : 'Not marked as pressed') + '</dd>' +
     '<dt>Symptoms</dt><dd>' + escapeHtml((event.symptoms || []).join(', ')) + '</dd>' +
     '<dt>Duration</dt><dd>' + escapeHtml(event.duration || 'Not recorded') + '</dd>' +
@@ -481,6 +526,11 @@ function loadEventForEdit(id) {
   };
 
   $('capturedLocal').textContent = formatLocal(event.capturedAt);
+  $('editTimePanel').classList.remove('hidden');
+  $('eventDateTimeInput').value = toLocalDateTimeValue(event.capturedAt);
+  $('timeAdjustmentNote').textContent = event.timestampAdjusted
+    ? 'This event time has already been adjusted. Original app time: ' + formatLocal(event.originalCapturedAt || event.capturedAt)
+    : 'You may correct the event time before saving changes.';
   $('testMode').checked = !!event.isTest;
   $('monitorPressed').checked = !!event.bodyGuardianButtonPressed;
   $('duration').value = event.duration || '';
@@ -670,8 +720,12 @@ function eventToText(event) {
   return [
     'HEART MONITOR / BODYGUARDIAN EVENT',
     'Record type: ' + (event.isTest ? 'TEST / SIMULATED — NOT CLINICAL' : 'Clinical event'),
-    'Captured: ' + formatLocal(event.capturedAt),
+    'Event time: ' + formatLocal(event.capturedAt),
     'ISO timestamp: ' + event.capturedAt,
+    'Time adjusted after event: ' + (event.timestampAdjusted ? 'Yes' : 'No'),
+    ...(event.timestampAdjusted && event.originalCapturedAt
+      ? ['Original app timestamp: ' + event.originalCapturedAt]
+      : []),
     'Place: ' + place,
     'BodyGuardian center button: ' + (event.bodyGuardianButtonPressed ? 'Pressed' : 'Not marked as pressed'),
     'Activity: ' + event.activity,
@@ -730,8 +784,10 @@ function csvEscape(value) {
 function exportCsv() {
   const events = getEvents().filter(function(e) { return !e.isTest; });
   const headers = [
-    'captured_at_iso',
-    'captured_at_local',
+    'event_time_iso',
+    'event_time_local',
+    'time_adjusted_after_event',
+    'original_app_timestamp_iso',
     'place',
     'bodyguardian_button_pressed',
     'activity',
@@ -745,6 +801,8 @@ function exportCsv() {
     return [
       e.capturedAt,
       formatLocal(e.capturedAt),
+      e.timestampAdjusted ? 'yes' : 'no',
+      e.timestampAdjusted ? (e.originalCapturedAt || '') : '',
       e.place || (e.location ? 'Unnamed place' : ''),
       e.bodyGuardianButtonPressed ? 'yes' : 'no',
       e.activity,
@@ -919,6 +977,14 @@ function setupActions() {
   });
 
   $('clearNotesBtn').addEventListener('click', function() { $('notes').value = ''; });
+
+  $('eventDateTimeInput').addEventListener('change', function() {
+    const iso = localDateTimeValueToIso($('eventDateTimeInput').value);
+    if (iso) {
+      draft.capturedAt = iso;
+      $('capturedLocal').textContent = formatLocal(iso) + ' (edited)';
+    }
+  });
 
   $('reviewMissingBtn').addEventListener('click', function() {
     if ($('incompleteDialog').open) $('incompleteDialog').close();
