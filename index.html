@@ -376,7 +376,7 @@ button:disabled {
   <header class="app-header">
     <div>
       <h1>Heart Monitor</h1>
-      <p>BodyGuardian event logger · v0.2.10</p>
+      <p>BodyGuardian event logger · v0.2.11</p>
     </div>
     <button id="installBtn" class="secondary hidden" type="button">Install app</button>
   </header>
@@ -403,6 +403,13 @@ button:disabled {
           <strong id="capturedLocal">Tap RECORD EVENT NOW</strong>
         </div>
         <button id="recaptureBtn" class="secondary compact" type="button">Reset time to now</button>
+      </div>
+
+      <div id="editTimePanel" class="share-card hidden">
+        <h3>Edit event date / time</h3>
+        <p class="hint">Use this when the event happened earlier — for example, while your phone was in another room. The original app timestamp is retained in the record for audit history.</p>
+        <input id="eventDateTimeInput" class="text-input" type="datetime-local" step="1" />
+        <p id="timeAdjustmentNote" class="status"></p>
       </div>
 
       <fieldset id="step-bodyguardian">
@@ -575,7 +582,7 @@ button:disabled {
     </div>
   </dialog>
 
-  <script src="./app.js?v=0.2.10"></script>
+  <script src="./app.js?v=0.2.11"></script>
 
 </body>
 </html>
