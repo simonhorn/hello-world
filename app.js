@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '0.2.11';
+const APP_VERSION = '0.2.12';
 const STORAGE_KEY = 'heartMonitor.events.v1';
 const PLACES_KEY = 'heartMonitor.places.v1';
 const DELETED_KEY = 'heartMonitor.deleted.v1';
@@ -24,7 +24,8 @@ const ACTIVITIES = [
 ];
 
 const SYMPTOMS = [
-  'None / accidental push',
+  'No symptoms — other information',
+  'Accidental BodyGuardian button press',
   'Light-headedness',
   'Rapid or fast beats',
   'Flutter or skipped beats',
@@ -34,6 +35,11 @@ const SYMPTOMS = [
   'Tired or fatigued',
   'Passed out'
 ];
+
+const NON_SYMPTOM_OPTIONS = new Set([
+  'No symptoms — other information',
+  'Accidental BodyGuardian button press'
+]);
 
 let draft = null;
 let recognition = null;
@@ -146,13 +152,18 @@ function renderChoices() {
   document.querySelectorAll('input[name="symptom"]').forEach(function(input) {
     input.addEventListener('change', function() {
       $('step-symptoms').classList.remove('needs-attention');
-      if (input.value === 'None / accidental push' && input.checked) {
+
+      if (!input.checked) return;
+
+      // "No symptoms" and "Accidental button press" are event reasons, not symptoms.
+      // Each is mutually exclusive with every other symptom/reason choice.
+      if (NON_SYMPTOM_OPTIONS.has(input.value)) {
         document.querySelectorAll('input[name="symptom"]').forEach(function(other) {
           if (other !== input) other.checked = false;
         });
-      } else if (input.checked) {
-        Array.from(document.querySelectorAll('input[name="symptom"]')).forEach(function(other) {
-          if (other.value === 'None / accidental push') other.checked = false;
+      } else {
+        document.querySelectorAll('input[name="symptom"]').forEach(function(other) {
+          if (NON_SYMPTOM_OPTIONS.has(other.value)) other.checked = false;
         });
       }
     });
@@ -541,9 +552,18 @@ function loadEventForEdit(id) {
   document.querySelectorAll('input[name="activity"]').forEach(function(x) {
     x.checked = x.value === event.activity;
   });
+  const savedSymptoms = event.symptoms || [];
   document.querySelectorAll('input[name="symptom"]').forEach(function(x) {
-    x.checked = (event.symptoms || []).includes(x.value);
+    x.checked = savedSymptoms.includes(x.value);
   });
+
+  if (savedSymptoms.includes('None / accidental push')) {
+    $('validationMsg').innerHTML =
+      '<strong>Older symptom wording detected.</strong><br>' +
+      'This record used “None / accidental push.” Choose either “No symptoms — other information” ' +
+      'or “Accidental BodyGuardian button press” before saving any edits.';
+    $('validationMsg').classList.remove('hidden');
+  }
 
   if (event.place) {
     $('locationStatus').textContent = 'Saved place';
