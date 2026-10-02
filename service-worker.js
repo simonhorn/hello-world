@@ -1,5 +1,5 @@
-const CACHE='heart-monitor-v14';
-const CORE=['./','./index.html','./app.js?v=0.2.11','./manifest.webmanifest','./heart-monitor-icon.svg'];
+const CACHE='heart-monitor-v15';
+const CORE=['./','./index.html','./app.js?v=0.2.12','./manifest.webmanifest','./heart-monitor-icon.svg'];
 
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)));
